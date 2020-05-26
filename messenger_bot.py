@@ -86,6 +86,22 @@ def add_subscriber(msngr_link):
         os.fsync(f.fileno())
         f.close()
 
+# CLI
+parser = argparse.ArgumentParser(description="Messenger Bot CLI")
+parser.add_argument("--add-subscriber",
+                    action="store",
+                    nargs=1,
+                    metavar=("LINK"),
+                    help="add new subscriber")
+
+args = parser.parse_args()
+args = list(filter(lambda i: i[1], vars(args).items()))
+
+for k, v in args:
+    {
+        "add_subscriber": lambda v: add_subscriber(*v)
+    }[k](v)
+
 # Actual bot
 
 track_link = input("Track link: ")
