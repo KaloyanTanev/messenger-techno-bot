@@ -12,6 +12,6 @@ Facebook Messenger bot intended to send daily dose of quality techno.
 ## Build & Run
 
 1. Navigate to project folder
-2. Fill in your facebook username (email) and password in `secrets.py` file.
+2. Fill in your Facebook username (email) and password in `secrets.py` file.
 3. Fill in the desired subscribers in `subscribers.txt` file and remove the example link.
 4. Run `python3 messenger_bot.py` (in case you have `python3` command as your python 3.7 interpreter)
