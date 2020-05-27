@@ -6,7 +6,7 @@ Facebook Messenger bot intended to send daily dose of quality techno.
 
 - Python 3.7
 - Google Chrome 81.0
-- Chromium Webdriver (https://chromedriver.chromium.org/downloads)
+- Chromium Webdriver (<https://chromedriver.chromium.org/downloads>)
 - Selenium (install with `pip`)
 
 ## Build & Run
