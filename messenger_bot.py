@@ -86,23 +86,41 @@ def add_subscriber(msngr_link):
         os.fsync(f.fileno())
         f.close()
 
-# Actual bot
+def start():
+    track_link = input("Track link: ")
 
-track_link = input("Track link: ")
+    custom_msg = input("Custom messеge: ")
 
-custom_msg = input("Custom messеge: ")
+    donations = input("Add donations(y/n)?: ")
 
-donations = input("Add donations(y/n)?: ")
+    unsubscribe = input("Add unsubscribe(y/n)?: ")
 
-unsubscribe = input("Add unsubscribe(y/n)?: ")
+    if(donations == "y"): opts['donations'] = True
+    if(unsubscribe == "y"): opts['unsubscribe'] = True
 
-if(donations == "y"): opts['donations'] = True
-if(unsubscribe == "y"): opts['unsubscribe'] = True
+    msg = ["Your daily dose of quality techno.", track_link, custom_msg]
 
-msg = ["Your daily dose of quality techno.", track_link, custom_msg]
+    bot = MessengerBot()
+    bot.login()
+    # bot.send_msg("https://www.messenger.com/t/987811307976917", msg, opts)
+    bot.send_multiple_msgs(subscribers, msg, opts)
+    bot.quit()
 
-bot = MessengerBot()
-bot.login()
-# bot.send_msg("https://www.messenger.com/t/987811307976917", msg, opts)
-bot.send_multiple_msgs(subscribers, msg, opts)
-bot.quit()
+# CLI
+parser = argparse.ArgumentParser(description="Messenger Bot CLI")
+parser.add_argument("--add-subscriber",
+                    action="store",
+                    nargs=1,
+                    metavar=("LINK"),
+                    help="add new subscriber")
+
+if not sys.argv[1:]:
+    start()
+
+args = parser.parse_args()
+args = list(filter(lambda i: i[1], vars(args).items()))
+
+for k, v in args:
+    {
+        "add_subscriber": lambda v: add_subscriber(*v)
+    }[k](v)
