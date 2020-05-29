@@ -8,8 +8,7 @@ from time import sleep
 
 from secrets import username, password
 
-with open('subscribers.txt') as f:
-    subscribers = f.read().splitlines()
+CURR_DIR = os.path.dirname(os.path.abspath(__file__))
 
 opts = {}
 
@@ -78,7 +77,24 @@ class MessengerBot():
     def quit(self):
         self.driver.quit()
 
+def create_file(path, data):
+    if not os.path.isfile(path):
+        with open(path, "w") as f:
+            f.write(data)
+            f.close()
+
+def ensure_file_exists(path):
+    if not os.path.isfile(path):
+        raise RuntimeError(os.path.basename(path) + " not found. Run setup?")
+
+
+
+def setup():
+    create_file(os.path.join(CURR_DIR, "opa.txt"), "https://www.messenger.com/t/example_link")
+    create_file(os.path.join(CURR_DIR, "python.py"), 'username = ""\npassword = ""')
+
 def add_subscriber(msngr_link):
+    ensure_file_exists(os.path.join(CURR_DIR, "subscribers.txt"))
     to_write = "\n" + msngr_link
     with open('subscribers.txt', "a") as f:
         f.write(to_write)
@@ -87,6 +103,12 @@ def add_subscriber(msngr_link):
         f.close()
 
 def start():
+    ensure_file_exists(os.path.join(CURR_DIR, "subscribers.txt"))
+    ensure_file_exists(os.path.join(CURR_DIR, "secrets.py"))
+
+    with open('subscribers.txt') as f:
+        subscribers = f.read().splitlines()
+
     track_link = input("Track link: ")
 
     custom_msg = input("Custom messеge: ")
@@ -108,6 +130,9 @@ def start():
 
 # CLI
 parser = argparse.ArgumentParser(description="Messenger Bot CLI")
+parser.add_argument("--setup",
+                    action="store_true",
+                    help="setup local files")
 parser.add_argument("--add-subscriber",
                     action="store",
                     nargs=1,
@@ -115,12 +140,14 @@ parser.add_argument("--add-subscriber",
                     help="add new subscriber")
 
 if not sys.argv[1:]:
-    start()
+    os.path.dirname(os.path.abspath(__file__))
+    # start()
 
 args = parser.parse_args()
 args = list(filter(lambda i: i[1], vars(args).items()))
 
 for k, v in args:
     {
-        "add_subscriber": lambda v: add_subscriber(*v)
+        "add_subscriber": lambda v: add_subscriber(*v),
+        "setup": lambda v: setup()
     }[k](v)
