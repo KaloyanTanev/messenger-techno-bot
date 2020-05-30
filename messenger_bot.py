@@ -6,10 +6,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.keys import Keys
 from time import sleep
 
-from secrets import username, password
-
-with open('subscribers.txt') as f:
-    subscribers = f.read().splitlines()
+CURR_DIR = os.path.dirname(os.path.abspath(__file__))
 
 opts = {}
 
@@ -17,7 +14,7 @@ class MessengerBot():
     def __init__(self):
         self.driver = webdriver.Chrome(ChromeDriverManager().install())
 
-    def login(self):
+    def login(self, username, password):
         self.driver.get('https://www.messenger.com/')
 
         sleep(2)
@@ -78,8 +75,28 @@ class MessengerBot():
     def quit(self):
         self.driver.quit()
 
+def create_file(path, data):
+    if not os.path.isfile(path):
+        with open(path, "w") as f:
+            f.write(data)
+            f.close()
+
+def ensure_file_exists(path):
+    if not os.path.isfile(path):
+        raise RuntimeError(os.path.basename(path) + " not found. Run setup?")
+
+def ensure_variable_exists(f, var):
+    if (not hasattr(f, var)) or getattr(f, var) == "":
+        raise RuntimeError("{0} not found or empty in {1}.py".format(var, f.__name__))
+
+
+def setup():
+    create_file(os.path.join(CURR_DIR, "subscribers.txt"), "")
+    create_file(os.path.join(CURR_DIR, "my_secrets.py"), 'username = ""\npassword = ""')
+
 def add_subscriber(msngr_link):
-    to_write = "\n" + msngr_link
+    ensure_file_exists(os.path.join(CURR_DIR, "subscribers.txt"))
+    to_write = msngr_link + "\n"
     with open('subscribers.txt', "a") as f:
         f.write(to_write)
         f.flush()
@@ -87,6 +104,21 @@ def add_subscriber(msngr_link):
         f.close()
 
 def start():
+    ensure_file_exists(os.path.join(CURR_DIR, "subscribers.txt"))
+    ensure_file_exists(os.path.join(CURR_DIR, "my_secrets.py"))
+
+    # Consider better solution
+    try:
+        import my_secrets
+    except ImportError:
+        RuntimeError("my_secrets.py not found. Run setup")
+
+    ensure_variable_exists(my_secrets, 'username')
+    ensure_variable_exists(my_secrets, 'password')
+
+    with open('subscribers.txt') as f:
+        subscribers = f.read().splitlines()
+
     track_link = input("Track link: ")
 
     custom_msg = input("Custom messеge: ")
@@ -101,13 +133,16 @@ def start():
     msg = ["Your daily dose of quality techno.", track_link, custom_msg]
 
     bot = MessengerBot()
-    bot.login()
+    bot.login(my_secrets.username, my_secrets.password)
     # bot.send_msg("https://www.messenger.com/t/987811307976917", msg, opts)
     bot.send_multiple_msgs(subscribers, msg, opts)
     bot.quit()
 
 # CLI
 parser = argparse.ArgumentParser(description="Messenger Bot CLI")
+parser.add_argument("--setup",
+                    action="store_true",
+                    help="setup local files")
 parser.add_argument("--add-subscriber",
                     action="store",
                     nargs=1,
@@ -115,6 +150,7 @@ parser.add_argument("--add-subscriber",
                     help="add new subscriber")
 
 if not sys.argv[1:]:
+    # os.path.dirname(os.path.abspath(__file__))
     start()
 
 args = parser.parse_args()
@@ -122,5 +158,6 @@ args = list(filter(lambda i: i[1], vars(args).items()))
 
 for k, v in args:
     {
-        "add_subscriber": lambda v: add_subscriber(*v)
+        "add_subscriber": lambda v: add_subscriber(*v),
+        "setup": lambda v: setup()
     }[k](v)
