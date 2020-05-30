@@ -6,8 +6,6 @@ from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.keys import Keys
 from time import sleep
 
-from secrets import username, password
-
 CURR_DIR = os.path.dirname(os.path.abspath(__file__))
 
 opts = {}
@@ -16,7 +14,7 @@ class MessengerBot():
     def __init__(self):
         self.driver = webdriver.Chrome(ChromeDriverManager().install())
 
-    def login(self):
+    def login(self, username, password):
         self.driver.get('https://www.messenger.com/')
 
         sleep(2)
@@ -87,11 +85,14 @@ def ensure_file_exists(path):
     if not os.path.isfile(path):
         raise RuntimeError(os.path.basename(path) + " not found. Run setup?")
 
+def ensure_variable_exists(f, var):
+    if (not hasattr(f, var)) or getattr(f, var) == "":
+        raise RuntimeError("{0} not found or empty in {1}.py".format(var, f.__name__))
 
 
 def setup():
-    create_file(os.path.join(CURR_DIR, "opa.txt"), "https://www.messenger.com/t/example_link")
-    create_file(os.path.join(CURR_DIR, "python.py"), 'username = ""\npassword = ""')
+    create_file(os.path.join(CURR_DIR, "subscribers.txt"), "https://www.messenger.com/t/example_link")
+    create_file(os.path.join(CURR_DIR, "my_secrets.py"), 'username = ""\npassword = ""')
 
 def add_subscriber(msngr_link):
     ensure_file_exists(os.path.join(CURR_DIR, "subscribers.txt"))
@@ -104,7 +105,16 @@ def add_subscriber(msngr_link):
 
 def start():
     ensure_file_exists(os.path.join(CURR_DIR, "subscribers.txt"))
-    ensure_file_exists(os.path.join(CURR_DIR, "secrets.py"))
+    ensure_file_exists(os.path.join(CURR_DIR, "my_secrets.py"))
+
+    # Consider better solution
+    try:
+        import my_secrets
+    except ImportError:
+        RuntimeError("my_secrets.py not found. Run setup")
+
+    ensure_variable_exists(my_secrets, 'username')
+    ensure_variable_exists(my_secrets, 'password')
 
     with open('subscribers.txt') as f:
         subscribers = f.read().splitlines()
@@ -123,7 +133,7 @@ def start():
     msg = ["Your daily dose of quality techno.", track_link, custom_msg]
 
     bot = MessengerBot()
-    bot.login()
+    bot.login(my_secrets.username, my_secrets.password)
     # bot.send_msg("https://www.messenger.com/t/987811307976917", msg, opts)
     bot.send_multiple_msgs(subscribers, msg, opts)
     bot.quit()
@@ -140,8 +150,8 @@ parser.add_argument("--add-subscriber",
                     help="add new subscriber")
 
 if not sys.argv[1:]:
-    os.path.dirname(os.path.abspath(__file__))
-    # start()
+    # os.path.dirname(os.path.abspath(__file__))
+    start()
 
 args = parser.parse_args()
 args = list(filter(lambda i: i[1], vars(args).items()))
