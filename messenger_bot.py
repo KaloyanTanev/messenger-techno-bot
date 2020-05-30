@@ -91,12 +91,12 @@ def ensure_variable_exists(f, var):
 
 
 def setup():
-    create_file(os.path.join(CURR_DIR, "subscribers.txt"), "https://www.messenger.com/t/example_link")
+    create_file(os.path.join(CURR_DIR, "subscribers.txt"), "")
     create_file(os.path.join(CURR_DIR, "my_secrets.py"), 'username = ""\npassword = ""')
 
 def add_subscriber(msngr_link):
     ensure_file_exists(os.path.join(CURR_DIR, "subscribers.txt"))
-    to_write = "\n" + msngr_link
+    to_write = msngr_link + "\n"
     with open('subscribers.txt', "a") as f:
         f.write(to_write)
         f.flush()
