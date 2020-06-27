@@ -89,6 +89,10 @@ def ensure_variable_exists(f, var):
     if (not hasattr(f, var)) or getattr(f, var) == "":
         raise RuntimeError("{0} not found or empty in {1}.py".format(var, f.__name__))
 
+def add_option(opt):
+    print ("opa")
+    opts[opt] = True
+
 
 def setup():
     create_file(os.path.join(CURR_DIR, "subscribers.txt"), "")
@@ -140,6 +144,9 @@ def start():
 
 # CLI
 parser = argparse.ArgumentParser(description="Messenger Bot CLI")
+parser.add_argument("run",
+                    action="store_true",
+                    help="run the bot")
 parser.add_argument("--setup",
                     action="store_true",
                     help="setup local files")
@@ -148,6 +155,12 @@ parser.add_argument("--add-subscriber",
                     nargs=1,
                     metavar=("LINK"),
                     help="add new subscriber")
+parser.add_argument("-d", "--donations",
+                    action="store_true",
+                    help="setup local files")
+parser.add_argument("-u", "--unsubscribe",
+                    action="store_true",
+                    help="setup local files")
 
 if not sys.argv[1:]:
     # os.path.dirname(os.path.abspath(__file__))
@@ -159,5 +172,8 @@ args = list(filter(lambda i: i[1], vars(args).items()))
 for k, v in args:
     {
         "add_subscriber": lambda v: add_subscriber(*v),
-        "setup": lambda v: setup()
+        "setup": lambda v: setup(),
+        "donations": lambda v: add_option('donations'),
+        "unsubscribe": lambda v: add_option('unsubscribe'),
+        "run": lambda v: start(),
     }[k](v)
