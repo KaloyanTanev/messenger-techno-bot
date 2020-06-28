@@ -91,9 +91,8 @@ def ensure_variable_exists(f, var):
     if (not hasattr(f, var)) or getattr(f, var) == "":
         raise RuntimeError("{0} not found or empty in {1}.py".format(var, f.__name__))
 
-
 def setup():
-    create_file(os.path.join(CURR_DIR, "subscribers.txt"), "")
+    create_file(os.path.join(CURR_DIR, "subscribers.txt"), "users,link,UTCdatetime\n")
     create_file(os.path.join(CURR_DIR, "history.csv"), "")
     create_file(os.path.join(CURR_DIR, "my_secrets.py"), 'username = ""\npassword = ""')
 
