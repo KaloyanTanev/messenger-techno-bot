@@ -6,7 +6,7 @@ import csv
 from selenium import webdriver
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.keys import Keys
-from time import sleep,strftime,localtime,gmtime
+from time import sleep,strftime,gmtime
 
 CURR_DIR = os.path.dirname(os.path.abspath(__file__))
 
