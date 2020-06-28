@@ -123,6 +123,14 @@ def strip_youtube_url(url):
         url = url[len("https://youtu.be/"):]
     return url
 
+def update_history(link, subscribers):
+    dt_now = strftime("%Y-%m-%dT%H:%M:%S+00:00", gmtime())
+    with open('history.csv', "a") as f:
+        f.write(str(len(subscribers)) + "," + link + "," + dt_now + "\n")
+        f.flush()
+        os.fsync(f.fileno())
+        f.close()
+
 def start():
     ensure_file_exists(os.path.join(CURR_DIR, "subscribers.txt"))
     ensure_file_exists(os.path.join(CURR_DIR, "my_secrets.py"))
@@ -156,6 +164,7 @@ def start():
     bot.login(my_secrets.username, my_secrets.password)
     # bot.send_msg("https://www.messenger.com/t/987811307976917", msg, opts)
     bot.send_multiple_msgs(subscribers, msg, opts)
+    update_history(track_link, subscribers)
     bot.quit()
 
 # CLI
@@ -172,9 +181,7 @@ parser.add_argument("--add-subscriber",
 # 2020-06-27T15:59:40+00:00
 
 if not sys.argv[1:]:    
-    # print(strftime("%Y-%m-%dT%H:%M:%S+00:00", gmtime()))
-    validate("https://www.youtu.com/watch?v=vlShAeVa-NE")
-    # start()
+    start()
 
 args = parser.parse_args()
 args = list(filter(lambda i: i[1], vars(args).items()))
