@@ -1,10 +1,12 @@
 import sys
 import argparse
 import os
+import datetime
+import csv
 from selenium import webdriver
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.keys import Keys
-from time import sleep
+from time import sleep,strftime,localtime,gmtime
 
 CURR_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -92,6 +94,7 @@ def ensure_variable_exists(f, var):
 
 def setup():
     create_file(os.path.join(CURR_DIR, "subscribers.txt"), "")
+    create_file(os.path.join(CURR_DIR, "history.csv"), "")
     create_file(os.path.join(CURR_DIR, "my_secrets.py"), 'username = ""\npassword = ""')
 
 def add_subscriber(msngr_link):
@@ -102,6 +105,23 @@ def add_subscriber(msngr_link):
         f.flush()
         os.fsync(f.fileno())
         f.close()
+
+def validate(link):
+    with open("history.csv", 'r') as data: 
+        reader = csv.DictReader(data)
+        for line in reader: 
+            youtube_id = strip_youtube_url(line['link'])
+            if (("youtube.com" or "youtu.be") and youtube_id in link):
+                raise RuntimeError("{0} was already sent on {1}".format(line['link'], line['datetime']))
+
+def strip_youtube_url(url):
+    if url.endswith(".com/"):
+        url = url[:len(url)-len(".com/")]
+    if url.startswith("https://www.youtube.com/watch?v="):
+        url = url[len("https://www.youtube.com/watch?v="):]
+    if url.startswith("https://youtu.be/"):
+        url = url[len("https://youtu.be/"):]
+    return url
 
 def start():
     ensure_file_exists(os.path.join(CURR_DIR, "subscribers.txt"))
@@ -149,9 +169,12 @@ parser.add_argument("--add-subscriber",
                     metavar=("LINK"),
                     help="add new subscriber")
 
-if not sys.argv[1:]:
-    # os.path.dirname(os.path.abspath(__file__))
-    start()
+# 2020-06-27T15:59:40+00:00
+
+if not sys.argv[1:]:    
+    # print(strftime("%Y-%m-%dT%H:%M:%S+00:00", gmtime()))
+    validate("https://www.youtu.com/watch?v=vlShAeVa-NE")
+    # start()
 
 args = parser.parse_args()
 args = list(filter(lambda i: i[1], vars(args).items()))
