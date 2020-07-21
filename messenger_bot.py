@@ -181,8 +181,6 @@ parser.add_argument("--add-subscriber",
                     metavar=("LINK"),
                     help="add new subscriber")
 
-# 2020-06-27T15:59:40+00:00
-
 if not sys.argv[1:]:    
     start()
 
