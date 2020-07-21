@@ -83,27 +83,32 @@ def create_file(path, data):
             f.write(data)
             f.close()
 
+def write_to_file(path, data):
+    with open(path, "a") as f:
+        f.write(data)
+        f.flush()
+        os.fsync(f.fileno())
+        f.close()
+
 def ensure_file_exists(path):
     if not os.path.isfile(path):
         raise RuntimeError(os.path.basename(path) + " not found. Run setup?")
 
 def ensure_variable_exists(f, var):
     if (not hasattr(f, var)) or getattr(f, var) == "":
-        raise RuntimeError("{0} not found or empty in {1}.py".format(var, f.__name__))
+        error = "{0} not found or empty in {1}.py".format(var, f.__name__)
+        raise RuntimeError(error)
 
 def setup():
-    create_file(os.path.join(CURR_DIR, "subscribers.txt"), "users,link,UTCdatetime\n")
+    create_file(os.path.join(CURR_DIR, "subscribers.txt"), "")
     create_file(os.path.join(CURR_DIR, "history.csv"), "")
-    create_file(os.path.join(CURR_DIR, "my_secrets.py"), 'username = ""\npassword = ""')
+    write_to_file("history.csv", "users,link,UTC_datetime\n")
+    create_file(os.path.join(CURR_DIR, "my_secrets.py"), '')
+    write_to_file("my_secrets.py", 'username = ""\npassword = ""')
 
 def add_subscriber(msngr_link):
     ensure_file_exists(os.path.join(CURR_DIR, "subscribers.txt"))
-    to_write = msngr_link + "\n"
-    with open('subscribers.txt', "a") as f:
-        f.write(to_write)
-        f.flush()
-        os.fsync(f.fileno())
-        f.close()
+    write_to_file("subscribers.txt", msngr_link + "\n")
 
 def validate(link):
     with open("history.csv", 'r') as data: 
@@ -124,11 +129,8 @@ def strip_url(url):
 
 def update_history(link, subscribers):
     dt_now = strftime("%Y-%m-%dT%H:%M:%S+00:00", gmtime())
-    with open('history.csv', "a") as f:
-        f.write(str(len(subscribers)) + "," + link + "," + dt_now + "\n")
-        f.flush()
-        os.fsync(f.fileno())
-        f.close()
+    data = str(len(subscribers)) + "," + link + "," + dt_now + "\n"
+    write_to_file('history.csv', data)
 
 def start():
     ensure_file_exists(os.path.join(CURR_DIR, "subscribers.txt"))
