@@ -1,10 +1,12 @@
 import sys
 import argparse
 import os
+import datetime
+import csv
 from selenium import webdriver
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.keys import Keys
-from time import sleep
+from time import sleep,strftime,gmtime
 
 CURR_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -89,9 +91,9 @@ def ensure_variable_exists(f, var):
     if (not hasattr(f, var)) or getattr(f, var) == "":
         raise RuntimeError("{0} not found or empty in {1}.py".format(var, f.__name__))
 
-
 def setup():
-    create_file(os.path.join(CURR_DIR, "subscribers.txt"), "")
+    create_file(os.path.join(CURR_DIR, "subscribers.txt"), "users,link,UTCdatetime\n")
+    create_file(os.path.join(CURR_DIR, "history.csv"), "")
     create_file(os.path.join(CURR_DIR, "my_secrets.py"), 'username = ""\npassword = ""')
 
 def add_subscriber(msngr_link):
@@ -99,6 +101,31 @@ def add_subscriber(msngr_link):
     to_write = msngr_link + "\n"
     with open('subscribers.txt', "a") as f:
         f.write(to_write)
+        f.flush()
+        os.fsync(f.fileno())
+        f.close()
+
+def validate(link):
+    with open("history.csv", 'r') as data: 
+        reader = csv.DictReader(data)
+        for line in reader: 
+            youtube_id = strip_youtube_url(line['link'])
+            if (("youtube.com" or "youtu.be") and youtube_id in link):
+                raise RuntimeError("{0} was already sent on {1}".format(line['link'], line['datetime']))
+
+def strip_youtube_url(url):
+    if url.endswith(".com/"):
+        url = url[:len(url)-len(".com/")]
+    if url.startswith("https://www.youtube.com/watch?v="):
+        url = url[len("https://www.youtube.com/watch?v="):]
+    if url.startswith("https://youtu.be/"):
+        url = url[len("https://youtu.be/"):]
+    return url
+
+def update_history(link, subscribers):
+    dt_now = strftime("%Y-%m-%dT%H:%M:%S+00:00", gmtime())
+    with open('history.csv', "a") as f:
+        f.write(str(len(subscribers)) + "," + link + "," + dt_now + "\n")
         f.flush()
         os.fsync(f.fileno())
         f.close()
@@ -136,6 +163,7 @@ def start():
     bot.login(my_secrets.username, my_secrets.password)
     # bot.send_msg("https://www.messenger.com/t/987811307976917", msg, opts)
     bot.send_multiple_msgs(subscribers, msg, opts)
+    update_history(track_link, subscribers)
     bot.quit()
 
 # CLI
@@ -149,8 +177,9 @@ parser.add_argument("--add-subscriber",
                     metavar=("LINK"),
                     help="add new subscriber")
 
-if not sys.argv[1:]:
-    # os.path.dirname(os.path.abspath(__file__))
+# 2020-06-27T15:59:40+00:00
+
+if not sys.argv[1:]:    
     start()
 
 args = parser.parse_args()
