@@ -109,8 +109,8 @@ def validate(link):
     with open("history.csv", 'r') as data: 
         reader = csv.DictReader(data)
         for line in reader: 
-            url = strip_url(line['link'])
-            if (("youtube.com" or "youtu.be" or "open.spotify.com") and url in link):
+            track_id = strip_url(line['link'])
+            if (("youtube.com" or "youtu.be" or "open.spotify.com") and track_id in link):
                 raise RuntimeError("{0} was already sent on {1}".format(line['link'], line['UTC_datetime']))
 
 def strip_url(url):
