@@ -109,17 +109,17 @@ def validate(link):
     with open("history.csv", 'r') as data: 
         reader = csv.DictReader(data)
         for line in reader: 
-            youtube_id = strip_youtube_url(line['link'])
-            if (("youtube.com" or "youtu.be") and youtube_id in link):
-                raise RuntimeError("{0} was already sent on {1}".format(line['link'], line['datetime']))
+            track_id = strip_url(line['link'])
+            if (("youtube.com" or "youtu.be" or "open.spotify.com") and track_id in link):
+                raise RuntimeError("{0} was already sent on {1}".format(line['link'], line['UTC_datetime']))
 
-def strip_youtube_url(url):
-    if url.endswith(".com/"):
-        url = url[:len(url)-len(".com/")]
+def strip_url(url):
     if url.startswith("https://www.youtube.com/watch?v="):
         url = url[len("https://www.youtube.com/watch?v="):]
     if url.startswith("https://youtu.be/"):
         url = url[len("https://youtu.be/"):]
+    if url.startswith("https://open.spotify.com/track/"):
+        url = url[len("https://open.spotify.com/track/"):]
     return url
 
 def update_history(link, subscribers):
@@ -147,6 +147,8 @@ def start():
         subscribers = f.read().splitlines()
 
     track_link = input("Track link: ")
+
+    validate(track_link)
 
     custom_msg = input("Custom messеge: ")
 
