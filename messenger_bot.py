@@ -33,7 +33,7 @@ class MessengerBot():
     def send_msg(self, url, msg, opts = {}):
         self.driver.get(url)
 
-        sleep(1)
+        sleep(3)
 
         msg_in = self.driver.switch_to.active_element
         for line in msg:
