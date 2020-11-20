@@ -83,8 +83,15 @@ def create_file(path, data):
             f.write(data)
             f.close()
 
-def write_to_file(path, data):
+def append_to_file(path, data):
     with open(path, "a") as f:
+        f.write(data)
+        f.flush()
+        os.fsync(f.fileno())
+        f.close()
+
+def write_to_file(path, data):
+    with open(path, "w") as f:
         f.write(data)
         f.flush()
         os.fsync(f.fileno())
@@ -102,13 +109,23 @@ def ensure_variable_exists(f, var):
 def setup():
     create_file(os.path.join(CURR_DIR, "subscribers.txt"), "")
     create_file(os.path.join(CURR_DIR, "history.csv"), "")
-    write_to_file("history.csv", "users,link,UTC_datetime\n")
+    append_to_file("history.csv", "users,link,UTC_datetime\n")
     create_file(os.path.join(CURR_DIR, "my_secrets.py"), '')
-    write_to_file("my_secrets.py", 'username = ""\npassword = ""')
+    append_to_file("my_secrets.py", 'username = ""\npassword = ""')
 
 def add_subscriber(msngr_link):
     ensure_file_exists(os.path.join(CURR_DIR, "subscribers.txt"))
-    write_to_file("subscribers.txt", msngr_link + "\n")
+    append_to_file("subscribers.txt", msngr_link + "\n")
+
+def enqueue(track, msg):
+    append_to_file("queue.csv", track + "," + msg + "\n")
+
+def dequeue():
+    with open("queue.txt", 'r') as fout: 
+        head, tail = fout.read().split('\n', 1)
+        track, custom_msg = head.split(',', 1)
+        # send_track(track, custom_msg)
+    write_to_file("queue.txt", tail)
 
 def validate(link):
     with open("history.csv", 'r') as data: 
@@ -130,9 +147,27 @@ def strip_url(url):
 def update_history(link, subscribers):
     dt_now = strftime("%Y-%m-%dT%H:%M:%S+00:00", gmtime())
     data = str(len(subscribers)) + "," + link + "," + dt_now + "\n"
-    write_to_file('history.csv', data)
+    append_to_file('history.csv', data)
 
 def start():
+
+    track_link = input("Track link: ")
+
+    validate(track_link)
+
+    custom_msg = input("Custom messеge: ")
+
+    donations = input("Add donations(y/n)?: ")
+
+    unsubscribe = input("Add unsubscribe(y/n)?: ")
+
+    if(donations == "y"): opts['donations'] = True
+    if(unsubscribe == "y"): opts['unsubscribe'] = True
+
+    send_track(track_link, custom_msg, opts)
+
+
+def send_track(track, custom_msg, opts = {}):
     ensure_file_exists(os.path.join(CURR_DIR, "subscribers.txt"))
     ensure_file_exists(os.path.join(CURR_DIR, "my_secrets.py"))
 
@@ -148,38 +183,39 @@ def start():
     with open('subscribers.txt') as f:
         subscribers = f.read().splitlines()
 
-    track_link = input("Track link: ")
-
-    validate(track_link)
-
-    custom_msg = input("Custom messеge: ")
-
-    donations = input("Add donations(y/n)?: ")
-
-    unsubscribe = input("Add unsubscribe(y/n)?: ")
-
-    if(donations == "y"): opts['donations'] = True
-    if(unsubscribe == "y"): opts['unsubscribe'] = True
-
-    msg = ["Your daily dose of quality techno.", track_link, custom_msg]
-
+    msg = ["Your daily dose of quality techno.", track, custom_msg]
+    
     bot = MessengerBot()
     bot.login(my_secrets.username, my_secrets.password)
     # bot.send_msg("https://www.messenger.com/t/987811307976917", msg, opts)
     bot.send_multiple_msgs(subscribers, msg, opts)
-    update_history(track_link, subscribers)
+    update_history(track, subscribers)
     bot.quit()
+
+def test():
+    print("CHECK")
 
 # CLI
 parser = argparse.ArgumentParser(description="Messenger Bot CLI")
 parser.add_argument("--setup",
                     action="store_true",
                     help="setup local files")
+parser.add_argument("--test",
+                    action="store_true",
+                    help="test")
 parser.add_argument("--add-subscriber",
                     action="store",
                     nargs=1,
                     metavar=("LINK"),
                     help="add new subscriber")
+parser.add_argument("--enqueue",
+                    action="store",
+                    nargs=2,
+                    metavar=("TRACK", "MSG"),
+                    help="enqueue a track")
+parser.add_argument("--dequeue",
+                    action="store_true",
+                    help="dequeue a track")
 
 if not sys.argv[1:]:    
     start()
@@ -190,5 +226,8 @@ args = list(filter(lambda i: i[1], vars(args).items()))
 for k, v in args:
     {
         "add_subscriber": lambda v: add_subscriber(*v),
+        "enqueue": lambda v: enqueue(*v),
+        "dequeue": lambda v: dequeue(),
+        "test": lambda v: test(),
         "setup": lambda v: setup()
     }[k](v)
