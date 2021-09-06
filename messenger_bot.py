@@ -83,7 +83,7 @@ class MessengerBot():
         msg_in.send_keys(Keys.SHIFT, Keys.ENTER)
         msg_in.send_keys("BGN: BG97RZBB91551005263064")
         msg_in.send_keys(Keys.SHIFT, Keys.ENTER)
-        msg_in.send_keys("All other fiat: GB17REVO00997059115935")
+        msg_in.send_keys("All other fiat: LT923250024620493793")
         msg_in.send_keys(Keys.SHIFT, Keys.ENTER)
         msg_in.send_keys("BTC: 157vHYi4WnUQVpT2rDqQgBJeidLjjUn8Lf")
         msg_in.send_keys(Keys.SHIFT, Keys.ENTER)
