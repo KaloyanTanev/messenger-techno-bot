@@ -1,12 +1,17 @@
-import sys
 import argparse
-import os
-import datetime
 import csv
+import logging
+import os
+import sys
+from time import sleep, strftime, gmtime
+
 from selenium import webdriver
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.keys import Keys
-from time import sleep,strftime,gmtime
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions
+from selenium.common.exceptions import ElementNotVisibleException, ElementNotSelectableException, TimeoutException
 
 CURR_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -19,21 +24,37 @@ class MessengerBot():
     def login(self, username, password):
         self.driver.get('https://www.messenger.com/')
 
-        sleep(2)
+        self.accept_cookies()
 
-        email_in = self.driver.find_element_by_xpath('//*[@id="email"]')
-        email_in.send_keys(username)
+        self.driver.find_element_by_xpath('//*[@id="email"]').send_keys(username)
+        self.driver.find_element_by_xpath('//*[@id="pass"]').send_keys(password)
+        self.driver.find_element_by_xpath('//*[@id="loginbutton"]').click()
 
-        pw_in = self.driver.find_element_by_xpath('//*[@id="pass"]')
-        pw_in.send_keys(password)
-
-        login_btn = self.driver.find_element_by_xpath('//*[@id="loginbutton"]')
-        login_btn.click()
+    def accept_cookies(self):
+        cookies_button = '/html/body/div[2]/div[2]/div/div/div/div/div[3]/button[2]'
+        try:
+            WebDriverWait(
+                driver=self.driver,
+                timeout=15,
+                poll_frequency=0.5,
+                ignored_exceptions=[ElementNotVisibleException, ElementNotSelectableException]
+            ).until(expected_conditions.element_to_be_clickable((By.XPATH, cookies_button)))
+            self.driver.find_element_by_xpath(cookies_button).click()
+        except TimeoutException:
+            logging.warning('No cookies prompt found')
 
     def send_msg(self, url, msg, opts = {}):
         self.driver.get(url)
 
-        sleep(3)
+        # header bar with name
+        xpath_check = '/html/body/div[1]/div/div/div/div[2]/div/div/div[1]/div[1]/div[2]/div/div/div/div/div/div/div[1]/div'
+
+        WebDriverWait(
+            driver=self.driver,
+            timeout=30,
+            poll_frequency=0.5,
+            ignored_exceptions=[ElementNotVisibleException, ElementNotSelectableException]
+        ).until(expected_conditions.element_to_be_clickable((By.XPATH, xpath_check)))
 
         msg_in = self.driver.switch_to.active_element
         for line in msg:
@@ -49,7 +70,7 @@ class MessengerBot():
         sleep(1)
 
     def send_multiple_msgs(self, subscribers, msg, opts = {}):
-        print(subscribers)
+        logging.info('Sending tracks to: {}'.format(subscribers))
         for subscriber in subscribers:
             self.send_msg(subscriber, msg, opts)
 
@@ -161,11 +182,11 @@ def start():
     if(donations == "y"): opts['donations'] = True
     if(unsubscribe == "y"): opts['unsubscribe'] = True
 
-    msg = ["Your daily dose of quality techno.", track_link, custom_msg]
+    msg = ["Your dose of quality techno for today.", track_link, custom_msg]
 
     bot = MessengerBot()
     bot.login(my_secrets.username, my_secrets.password)
-    # bot.send_msg("https://www.messenger.com/t/987811307976917", msg, opts)
+    # bot.send_msg("https://www.messenger.com/t/100001510066770", msg, opts)
     bot.send_multiple_msgs(subscribers, msg, opts)
     update_history(track_link, subscribers)
     bot.quit()
@@ -181,7 +202,7 @@ parser.add_argument("--add-subscriber",
                     metavar=("LINK"),
                     help="add new subscriber")
 
-if not sys.argv[1:]:    
+if not sys.argv[1:]:
     start()
 
 args = parser.parse_args()
